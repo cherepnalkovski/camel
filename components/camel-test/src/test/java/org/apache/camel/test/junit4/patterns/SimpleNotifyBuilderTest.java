@@ -14,34 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
+import java.util.concurrent.TimeUnit;
+
+import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.NotifyBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
-/**
- *
- */
-public class ProduceBeanTest extends CamelTestSupport {
+public class SimpleNotifyBuilderTest extends CamelTestSupport {
 
     @Test
-    public void testProduceBean() throws Exception {
-        getMockEndpoint("mock:result").expectedMessageCount(1);
+    public void testNotifyBuilder() throws Exception {
+        NotifyBuilder notify = new NotifyBuilder(context)
+                .from("seda:start")
+                .wereSentTo("seda:queue")
+                .whenDone(10)
+                .create();
 
-        template.sendBody("direct:start", "Hello World");
+        for (int i = 0; i < 10; i++) {
+            template.sendBody("seda:start", "Camel" + i);
+        }
 
-        assertMockEndpointsSatisfied();
+        boolean matches = notify.matches(10, TimeUnit.SECONDS);
+        assertTrue(matches);
     }
 
     @Override
-    protected RouteBuilder createRouteBuilder() throws Exception {
+    protected RoutesBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .bean(MyProduceBean.class, "doSomething");
+                from("seda:start")
+                    .transform(simple("Bye ${body}"))
+                    .to("seda:queue");
             }
         };
     }
+
 }

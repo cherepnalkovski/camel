@@ -14,9 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
+import org.apache.camel.EndpointInject;
+import org.apache.camel.Produce;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
@@ -24,34 +28,32 @@ import org.junit.Test;
  * Tests filtering using Camel Test
  */
 // START SNIPPET: example
-public class FilterCreateCamelContextPerClassTest extends CamelTestSupport {
+public class FilterJUnit4Test extends CamelTestSupport {
 
-    @Override
-    public boolean isCreateCamelContextPerClass() {
-        // we override this method and return true, to tell Camel test-kit that
-        // it should only create CamelContext once (per class), so we will
-        // re-use the CamelContext between each test method in this class
-        return true;
-    }
+    @EndpointInject("mock:result")
+    protected MockEndpoint resultEndpoint;
+
+    @Produce("direct:start")
+    protected ProducerTemplate template;
 
     @Test
     public void testSendMatchingMessage() throws Exception {
         String expectedBody = "<matched/>";
 
-        getMockEndpoint("mock:result").expectedBodiesReceived(expectedBody);
+        resultEndpoint.expectedBodiesReceived(expectedBody);
 
-        template.sendBodyAndHeader("direct:start", expectedBody, "foo", "bar");
+        template.sendBodyAndHeader(expectedBody, "foo", "bar");
 
-        assertMockEndpointsSatisfied();
+        resultEndpoint.assertIsSatisfied();
     }
 
     @Test
     public void testSendNotMatchingMessage() throws Exception {
-        getMockEndpoint("mock:result").expectedMessageCount(0);
+        resultEndpoint.expectedMessageCount(0);
 
-        template.sendBodyAndHeader("direct:start", "<notMatched/>", "foo", "notMatchedHeaderValue");
+        template.sendBodyAndHeader("<notMatched/>", "foo", "notMatchedHeaderValue");
 
-        assertMockEndpointsSatisfied();
+        resultEndpoint.assertIsSatisfied();
     }
 
     @Override
@@ -62,4 +64,6 @@ public class FilterCreateCamelContextPerClassTest extends CamelTestSupport {
             }
         };
     }
+
 }
+// END SNIPPET: example

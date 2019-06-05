@@ -14,41 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
-import org.apache.camel.Predicate;
+package org.apache.camel.test.junit4.patterns;
+
+import org.apache.camel.RoutesBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.Before;
 import org.junit.Test;
 
-public class RouteBuilderConfigureExceptionTest extends CamelTestSupport {
-
-    private Predicate iAmNull;
-
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        try {
-            super.setUp();
-            fail("Should have thrown exception");
-        } catch (Exception e) {
-            // expected
-        }
-    }
+public class SimpleMockTest extends CamelTestSupport {
 
     @Test
-    public void testFoo() throws Exception {
+    public void testMock() throws Exception {
+        getMockEndpoint("mock:result").expectedBodiesReceived("Hello World");
+
+        template.sendBody("direct:start", "Hello World");
+
+        assertMockEndpointsSatisfied();
     }
 
     @Override
-    protected RouteBuilder createRouteBuilder() {
+    protected RoutesBuilder createRouteBuilder() throws Exception {
         return new RouteBuilder() {
-            public void configure() {
+            @Override
+            public void configure() throws Exception {
                 from("direct:start")
-                    .choice()
-                        .when(iAmNull).to("mock:dead");
+                        .to("mock:result");
             }
         };
     }
-}
 
+}

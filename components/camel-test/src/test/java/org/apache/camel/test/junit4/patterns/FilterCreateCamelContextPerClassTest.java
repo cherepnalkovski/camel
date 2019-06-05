@@ -14,41 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
-import org.apache.camel.EndpointInject;
-import org.apache.camel.Produce;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
-public class MockEndpointFailNoHeaderTest extends CamelTestSupport {
 
-    @EndpointInject("mock:result")
-    protected MockEndpoint resultEndpoint;
-
-    @Produce("direct:start")
-    protected ProducerTemplate template;
+/**
+ * Tests filtering using Camel Test
+ */
+// START SNIPPET: example
+public class FilterCreateCamelContextPerClassTest extends CamelTestSupport {
 
     @Override
-    public boolean isDumpRouteCoverage() {
+    public boolean isCreateCamelContextPerClass() {
+        // we override this method and return true, to tell Camel test-kit that
+        // it should only create CamelContext once (per class), so we will
+        // re-use the CamelContext between each test method in this class
         return true;
     }
 
     @Test
-    public void withHeaderTestCase() throws InterruptedException {
+    public void testSendMatchingMessage() throws Exception {
         String expectedBody = "<matched/>";
-        resultEndpoint.expectedHeaderReceived("foo", "bar");
-        template.sendBodyAndHeader(expectedBody, "foo", "bar");
-        resultEndpoint.assertIsSatisfied();
+
+        getMockEndpoint("mock:result").expectedBodiesReceived(expectedBody);
+
+        template.sendBodyAndHeader("direct:start", expectedBody, "foo", "bar");
+
+        assertMockEndpointsSatisfied();
     }
 
     @Test
-    public void noHeaderTestCase() throws InterruptedException {
-        resultEndpoint.expectedHeaderReceived("foo", "bar");
-        resultEndpoint.setResultWaitTime(1); // speedup test
-        resultEndpoint.assertIsNotSatisfied();
+    public void testSendNotMatchingMessage() throws Exception {
+        getMockEndpoint("mock:result").expectedMessageCount(0);
+
+        template.sendBodyAndHeader("direct:start", "<notMatched/>", "foo", "notMatchedHeaderValue");
+
+        assertMockEndpointsSatisfied();
     }
 
     @Override

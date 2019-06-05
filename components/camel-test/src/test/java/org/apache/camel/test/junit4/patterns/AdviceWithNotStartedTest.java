@@ -14,33 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
+
+import java.util.concurrent.RejectedExecutionException;
+
+import org.apache.camel.CamelExecutionException;
 import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.reifier.RouteReifier;
 import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.After;
 import org.junit.Test;
 
-public class RouteProcessorDumpRouteCoverageTest extends CamelTestSupport {
+public class AdviceWithNotStartedTest extends CamelTestSupport {
 
     @Override
-    public boolean isDumpRouteCoverage() {
+    public boolean isUseAdviceWith() {
         return true;
     }
 
     @Test
-    public void testProcessor() throws Exception {
-        String out = template.requestBody("direct:start", "Hello World", String.class);
-        assertEquals("Bye World", out);
-    }
+    public void testNotStarted() throws Exception {
+        RouteReifier.adviceWith(context.getRouteDefinition("foo"), context, new AdviceWithRouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                weaveAddLast().to("mock:result");
+            }
+        });
 
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
+        getMockEndpoint("mock:result").expectedMessageCount(1);
 
-        // should create that file when test is done
-        assertFileExists("target/camel-route-coverage/RouteProcessorDumpRouteCoverageTest-testProcessor.xml");
+        try {
+            template.sendBody("direct:start", "Hello World");
+            fail("Should throw exception");
+        } catch (CamelExecutionException e) {
+            assertIsInstanceOf(RejectedExecutionException.class, e.getCause());
+        }
+
+        // start Camel
+        context.start();
+
+        template.sendBody("direct:start", "Bye World");
+
+        assertMockEndpointsSatisfied();
     }
 
     @Override
@@ -48,10 +64,9 @@ public class RouteProcessorDumpRouteCoverageTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("direct:start")
-                    .process(exchange -> exchange.getOut().setBody("Bye World"));
+                from("direct:start").routeId("foo")
+                        .to("log:foo");
             }
         };
     }
-
 }

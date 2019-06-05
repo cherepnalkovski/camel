@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Produce;
@@ -28,13 +28,19 @@ import org.junit.Test;
  * Tests filtering using Camel Test
  */
 // START SNIPPET: example
-public class FilterJUnit4Test extends CamelTestSupport {
+// tag::example[]
+public class FilterTest extends CamelTestSupport {
 
     @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
     @Produce("direct:start")
     protected ProducerTemplate template;
+
+    @Override
+    public boolean isDumpRouteCoverage() {
+        return true;
+    }
 
     @Test
     public void testSendMatchingMessage() throws Exception {
@@ -64,6 +70,6 @@ public class FilterJUnit4Test extends CamelTestSupport {
             }
         };
     }
-
 }
+// end::example[]
 // END SNIPPET: example

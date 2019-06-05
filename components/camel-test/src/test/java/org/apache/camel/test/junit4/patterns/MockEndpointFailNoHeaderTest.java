@@ -14,28 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
 import org.apache.camel.EndpointInject;
-import org.apache.camel.FluentProducerTemplate;
 import org.apache.camel.Produce;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
-
-/**
- * Tests filtering using Camel Test
- */
-// START SNIPPET: example
-// tag::example[]
-public class FilterFluentTemplateTest extends CamelTestSupport {
+public class MockEndpointFailNoHeaderTest extends CamelTestSupport {
 
     @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
     @Produce("direct:start")
-    protected FluentProducerTemplate fluentTemplate;
+    protected ProducerTemplate template;
 
     @Override
     public boolean isDumpRouteCoverage() {
@@ -43,23 +37,18 @@ public class FilterFluentTemplateTest extends CamelTestSupport {
     }
 
     @Test
-    public void testSendMatchingMessage() throws Exception {
+    public void withHeaderTestCase() throws InterruptedException {
         String expectedBody = "<matched/>";
-
-        resultEndpoint.expectedBodiesReceived(expectedBody);
-
-        fluentTemplate.withBody(expectedBody).withHeader("foo", "bar").send();
-
+        resultEndpoint.expectedHeaderReceived("foo", "bar");
+        template.sendBodyAndHeader(expectedBody, "foo", "bar");
         resultEndpoint.assertIsSatisfied();
     }
 
     @Test
-    public void testSendNotMatchingMessage() throws Exception {
-        resultEndpoint.expectedMessageCount(0);
-
-        fluentTemplate.withBody("<notMatched/>").withHeader("foo", "notMatchedHeaderValue").send();
-
-        resultEndpoint.assertIsSatisfied();
+    public void noHeaderTestCase() throws InterruptedException {
+        resultEndpoint.expectedHeaderReceived("foo", "bar");
+        resultEndpoint.setResultWaitTime(1); // speedup test
+        resultEndpoint.assertIsNotSatisfied();
     }
 
     @Override
@@ -71,5 +60,3 @@ public class FilterFluentTemplateTest extends CamelTestSupport {
         };
     }
 }
-// end::example[]
-// END SNIPPET: example

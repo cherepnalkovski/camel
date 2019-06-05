@@ -14,19 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
-import org.apache.camel.Produce;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.test.junit4.CamelTestSupport;
+import org.junit.Test;
 
 /**
  *
  */
-public class MyProduceBean {
+public class ProduceBeanTest extends CamelTestSupport {
 
-    @Produce("mock:result")
-    MySender sender;
+    @Test
+    public void testProduceBean() throws Exception {
+        getMockEndpoint("mock:result").expectedMessageCount(1);
 
-    public void doSomething(String body) {
-        sender.send(body);
+        template.sendBody("direct:start", "Hello World");
+
+        assertMockEndpointsSatisfied();
+    }
+
+    @Override
+    protected RouteBuilder createRouteBuilder() throws Exception {
+        return new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("direct:start")
+                    .bean(MyProduceBean.class, "doSomething");
+            }
+        };
     }
 }

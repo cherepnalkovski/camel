@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
+package org.apache.camel.test.junit4.patterns;
 
 import org.apache.camel.EndpointInject;
+import org.apache.camel.FluentProducerTemplate;
 import org.apache.camel.Produce;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
@@ -29,13 +29,13 @@ import org.junit.Test;
  */
 // START SNIPPET: example
 // tag::example[]
-public class FilterTest extends CamelTestSupport {
+public class FilterFluentTemplateTest extends CamelTestSupport {
 
     @EndpointInject("mock:result")
     protected MockEndpoint resultEndpoint;
 
     @Produce("direct:start")
-    protected ProducerTemplate template;
+    protected FluentProducerTemplate fluentTemplate;
 
     @Override
     public boolean isDumpRouteCoverage() {
@@ -48,7 +48,7 @@ public class FilterTest extends CamelTestSupport {
 
         resultEndpoint.expectedBodiesReceived(expectedBody);
 
-        template.sendBodyAndHeader(expectedBody, "foo", "bar");
+        fluentTemplate.withBody(expectedBody).withHeader("foo", "bar").send();
 
         resultEndpoint.assertIsSatisfied();
     }
@@ -57,7 +57,7 @@ public class FilterTest extends CamelTestSupport {
     public void testSendNotMatchingMessage() throws Exception {
         resultEndpoint.expectedMessageCount(0);
 
-        template.sendBodyAndHeader("<notMatched/>", "foo", "notMatchedHeaderValue");
+        fluentTemplate.withBody("<notMatched/>").withHeader("foo", "notMatchedHeaderValue").send();
 
         resultEndpoint.assertIsSatisfied();
     }

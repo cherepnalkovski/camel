@@ -14,39 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
-
-import org.apache.camel.RoutesBuilder;
+package org.apache.camel.test.junit4.patterns;
+import org.apache.camel.Predicate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
+import org.junit.Before;
 import org.junit.Test;
 
-public class SimpleMockEndpointsTest extends CamelTestSupport {
+public class RouteBuilderConfigureExceptionTest extends CamelTestSupport {
+
+    private Predicate iAmNull;
 
     @Override
-    public String isMockEndpointsAndSkip() {
-        return "seda:queue";
+    @Before
+    public void setUp() throws Exception {
+        try {
+            super.setUp();
+            fail("Should have thrown exception");
+        } catch (Exception e) {
+            // expected
+        }
     }
 
     @Test
-    public void testMockAndSkip() throws Exception {
-        getMockEndpoint("mock:seda:queue").expectedBodiesReceived("Bye Camel");
-
-        template.sendBody("seda:start", "Camel");
-
-        assertMockEndpointsSatisfied();
+    public void testFoo() throws Exception {
     }
 
     @Override
-    protected RoutesBuilder createRouteBuilder() throws Exception {
+    protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                from("seda:start")
-                    .transform(simple("Bye ${body}"))
-                    .to("seda:queue");
+            public void configure() {
+                from("direct:start")
+                    .choice()
+                        .when(iAmNull).to("mock:dead");
             }
         };
     }
-
 }
+

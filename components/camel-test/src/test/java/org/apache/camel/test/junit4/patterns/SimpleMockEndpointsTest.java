@@ -14,32 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
-
-import java.util.concurrent.TimeUnit;
+package org.apache.camel.test.junit4.patterns;
 
 import org.apache.camel.RoutesBuilder;
-import org.apache.camel.builder.NotifyBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
-public class SimpleNotifyBuilderTest extends CamelTestSupport {
+public class SimpleMockEndpointsTest extends CamelTestSupport {
+
+    @Override
+    public String isMockEndpointsAndSkip() {
+        return "seda:queue";
+    }
 
     @Test
-    public void testNotifyBuilder() throws Exception {
-        NotifyBuilder notify = new NotifyBuilder(context)
-                .from("seda:start")
-                .wereSentTo("seda:queue")
-                .whenDone(10)
-                .create();
+    public void testMockAndSkip() throws Exception {
+        getMockEndpoint("mock:seda:queue").expectedBodiesReceived("Bye Camel");
 
-        for (int i = 0; i < 10; i++) {
-            template.sendBody("seda:start", "Camel" + i);
-        }
+        template.sendBody("seda:start", "Camel");
 
-        boolean matches = notify.matches(10, TimeUnit.SECONDS);
-        assertTrue(matches);
+        assertMockEndpointsSatisfied();
     }
 
     @Override

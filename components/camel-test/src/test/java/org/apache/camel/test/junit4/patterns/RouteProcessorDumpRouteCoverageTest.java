@@ -14,36 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.test.patterns;
-
+package org.apache.camel.test.junit4.patterns;
 import org.apache.camel.RoutesBuilder;
-import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.reifier.RouteReifier;
 import org.apache.camel.test.junit4.CamelTestSupport;
+import org.junit.After;
 import org.junit.Test;
 
-public class SimpleWeaveAddMockLastTest extends CamelTestSupport {
+public class RouteProcessorDumpRouteCoverageTest extends CamelTestSupport {
 
-    public boolean isUseAdviceWith() {
+    @Override
+    public boolean isDumpRouteCoverage() {
         return true;
     }
 
     @Test
-    public void testWeaveAddMockLast() throws Exception {
-        RouteReifier.adviceWith(context.getRouteDefinitions().get(0), context, new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                weaveAddLast().to("mock:result");
-            }
-        });
-        context.start();
+    public void testProcessor() throws Exception {
+        String out = template.requestBody("direct:start", "Hello World", String.class);
+        assertEquals("Bye World", out);
+    }
 
-        getMockEndpoint("mock:result").expectedBodiesReceived("Bye Camel");
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
 
-        template.sendBody("seda:start", "Camel");
-
-        assertMockEndpointsSatisfied();
+        // should create that file when test is done
+        assertFileExists("target/camel-route-coverage/RouteProcessorDumpRouteCoverageTest-testProcessor.xml");
     }
 
     @Override
@@ -51,9 +48,8 @@ public class SimpleWeaveAddMockLastTest extends CamelTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("seda:start")
-                    .transform(simple("Bye ${body}"))
-                    .to("seda:queue");
+                from("direct:start")
+                    .process(exchange -> exchange.getOut().setBody("Bye World"));
             }
         };
     }
