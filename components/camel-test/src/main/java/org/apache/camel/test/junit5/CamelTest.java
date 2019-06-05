@@ -21,8 +21,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.junit.jupiter.api.extension.ExtendWith;
+
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@ExtendWith(CamelTestExtension.class)
+@ExtendWith(CamelTestParameterResolver.class)
 public @interface CamelTest {
 
 }
