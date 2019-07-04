@@ -24,7 +24,8 @@ import org.apache.camel.BindToRegistry;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.consul.endpoint.ConsulKeyValueActions;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ConsulClientKeyValueTest extends ConsulTestSupport {
 
@@ -49,8 +50,8 @@ public class ConsulClientKeyValueTest extends ConsulTestSupport {
 
         Optional<String> keyVal = getConsul().keyValueClient().getValueAsString(key);
 
-        assertTrue(keyVal.isPresent());
-        assertEquals(val, keyVal.get());
+        Assertions.assertTrue(keyVal.isPresent());
+        Assertions.assertEquals(val, keyVal.get());
     }
 
     @BindToRegistry("consulClient")

@@ -23,7 +23,8 @@ import com.orbitz.consul.model.event.Event;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.consul.endpoint.ConsulEventActions;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ConsulEventTest extends ConsulTestSupport {
 
@@ -48,9 +49,9 @@ public class ConsulEventTest extends ConsulTestSupport {
         EventResponse response = getConsul().eventClient().listEvents(key);
         List<Event> events = response.getEvents();
 
-        assertFalse(events.isEmpty());
-        assertTrue(events.get(0).getPayload().isPresent());
-        assertEquals(val, events.get(0).getPayload().get());
+        Assertions.assertFalse(events.isEmpty());
+        Assertions.assertTrue(events.get(0).getPayload().isPresent());
+        Assertions.assertEquals(val, events.get(0).getPayload().get());
     }
 
     @Override

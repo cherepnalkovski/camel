@@ -24,10 +24,10 @@ import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
 
 import org.apache.camel.BindToRegistry;
-import org.apache.camel.test.testcontainers.ContainerAwareTestSupport;
+import org.apache.camel.test.junit5.testcontainers.ContainerAwareTestSupport;
 import org.apache.camel.test.testcontainers.Wait;
-import org.junit.Rule;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.testcontainers.containers.GenericContainer;
 
 public class ConsulTestSupport extends ContainerAwareTestSupport {
@@ -35,8 +35,13 @@ public class ConsulTestSupport extends ContainerAwareTestSupport {
     public static final String CONTAINER_NAME = "consul";
     public static final String KV_PREFIX = "/camel";
 
-    @Rule
-    public final TestName testName = new TestName();
+    protected String testName;
+
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp();
+        testName = testInfo.getDisplayName();
+    }
 
     @BindToRegistry("consul")
     public ConsulComponent getConsulComponent() {
@@ -69,7 +74,7 @@ public class ConsulTestSupport extends ContainerAwareTestSupport {
     }
 
     protected String generateKey() {
-        return KV_PREFIX + "/" + testName.getMethodName() + "/" + generateRandomString();
+        return KV_PREFIX + "/" + testName + "/" + generateRandomString();
     }
 
     protected String consulUrl() {

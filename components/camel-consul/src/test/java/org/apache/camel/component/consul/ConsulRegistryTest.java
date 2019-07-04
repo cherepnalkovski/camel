@@ -23,14 +23,14 @@ import java.util.Set;
 
 import com.orbitz.consul.Consul;
 import org.apache.camel.NoSuchBeanException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit test for Camel Registry implementation for Consul
@@ -49,7 +49,7 @@ public class ConsulRegistryTest implements Serializable {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         container = ConsulTestSupport.consulContainer();
         container.start();
@@ -57,7 +57,7 @@ public class ConsulRegistryTest implements Serializable {
         registry = new ConsulRegistry(container.getContainerIpAddress(), container.getMappedPort(Consul.DEFAULT_HTTP_PORT));
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         container.stop();
     }
@@ -67,7 +67,7 @@ public class ConsulRegistryTest implements Serializable {
         registry.put("stringTestKey", "stringValue");
         String result = (String) registry.lookupByName("stringTestKey");
         registry.remove("stringTestKey");
-        assertNotNull(result);
+        Assertions.assertNotNull(result);
         assertEquals("stringValue", result);
     }
 
@@ -77,7 +77,7 @@ public class ConsulRegistryTest implements Serializable {
         registry.put("uniqueKey", "stringValueTwo");
         String result = (String) registry.lookupByName("uniqueKey");
         registry.remove("uniqueKey");
-        assertNotNull(result);
+        Assertions.assertNotNull(result);
         assertEquals("stringValueTwo", result);
     }
 
@@ -86,7 +86,7 @@ public class ConsulRegistryTest implements Serializable {
         registry.put("namedKey", "namedValue");
         String result = (String) registry.lookupByName("namedKey");
         registry.remove("namedKey");
-        assertNotNull(result);
+        Assertions.assertNotNull(result);
         assertEquals("namedValue", result);
     }
 
@@ -104,7 +104,7 @@ public class ConsulRegistryTest implements Serializable {
         registry.put("testClass", consulTestClass);
         ConsulTestClass consulTestClassClone = registry.lookupByNameAndType("testClass", consulTestClass.getClass());
         registry.remove("testClass");
-        assertNotNull(consulTestClassClone);
+        Assertions.assertNotNull(consulTestClassClone);
         assertEquals(consulTestClass.getClass(), consulTestClassClone.getClass());
     }
 
@@ -128,7 +128,7 @@ public class ConsulRegistryTest implements Serializable {
         registry.remove("testClassOne");
         registry.remove("testClassTwo");
         HashMap<String, ConsulTestClass> emptyHashMap = new HashMap<>();
-        assertNotNull(consulTestClassMap);
+        Assertions.assertNotNull(consulTestClassMap);
         assertEquals(consulTestClassMap.getClass(), emptyHashMap.getClass());
         assertEquals(2, consulTestClassMap.size());
     }
@@ -153,7 +153,7 @@ public class ConsulRegistryTest implements Serializable {
         ConsulTestClass classTwo = new ConsulTestClass();
         registry.put("classTwo", classTwo);
         Set<? extends ConsulTestClass> results = registry.findByType(classOne.getClass());
-        assertNotNull(results);
+        Assertions.assertNotNull(results);
         HashSet<ConsulTestClass> hashSet = new HashSet<>();
         registry.remove("classOne");
         registry.remove("classTwo");
@@ -165,8 +165,8 @@ public class ConsulRegistryTest implements Serializable {
 
     }
 
-    @Test(expected = NoSuchBeanException.class)
+    @Test
     public void deleteNonExisting() {
-        registry.remove("nonExisting");
+        Assertions.assertThrows(NoSuchBeanException.class, () -> registry.remove("nonExisting"));
     }
 }

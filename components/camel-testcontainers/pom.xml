@@ -49,7 +49,11 @@
             <artifactId>testcontainers</artifactId>
             <version>${testcontainers-version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers-version}</version>
+        </dependency>
         <!-- optional dependencies for running tests -->
         <dependency>
             <groupId>org.assertj</groupId>
