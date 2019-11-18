@@ -16,7 +16,7 @@
  */
 package org.apache.camel.component.cmis;
 
-public interface CamelCMISConstants {
+public interface  CamelCMISConstants {
     String CMIS_DOCUMENT = "cmis:document";
     String CMIS_FOLDER = "cmis:folder";
     String CMIS_ACTION = "cmis:action";
@@ -29,5 +29,6 @@ public interface CamelCMISConstants {
     String CAMEL_CMIS_RETRIEVE_CONTENT = "CamelCMISRetrieveContent";
     String CAMEL_CMIS_READ_SIZE = "CamelCMISReadSize";
     String CAMEL_CMIS_CONTENT_STREAM = "CamelCMISContent";
+    String ALL_VERSIONS = "allVersions";
 }
 
