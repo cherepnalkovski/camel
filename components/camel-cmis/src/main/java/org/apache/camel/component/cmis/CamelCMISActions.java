@@ -40,15 +40,17 @@ public enum CamelCMISActions {
     CANCEL_CHECK_OUT { public String getMethodName() {
             return "cancelCheckOut"; }},
     GET_FOLDER { public String getMethodName() {
-        return "getFolder"; }},
+            return "getFolder"; }},
     LIST_FOLDER { public String getMethodName() {
-        return "listFolder"; }},
+            return "listFolder"; }},
     FIND_OBJECT_BY_ID { public String getMethodName() {
-        return "findObjectById"; }},
+            return "findObjectById"; }},
     FIND_OBJECT_BY_PATH { public String getMethodName() {
-        return "findObjectByPath"; }},
+            return "findObjectByPath"; }},
+    CREATE_FOLDER_BY_PATH { public String getMethodName() {
+            return "createFolderByPath"; }},
     DOWNLOAD_DOCUMENT { public String getMethodName() {
-        return "downloadDocument"; }};
+            return "downloadDocument"; }};
 
     public abstract String getMethodName();
 }

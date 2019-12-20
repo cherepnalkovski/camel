@@ -19,6 +19,7 @@ package org.apache.camel.component.cmis;
 import java.awt.Stroke;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.HashMap;
@@ -81,8 +82,7 @@ public class CMISProducer extends DefaultProducer {
         exchange.getOut().setBody(object);
     }
 
-    public CmisObject findObjectById(Exchange exchange) throws Exception
-    {
+    public CmisObject findObjectById(Exchange exchange) throws Exception {
         validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
         Message message = exchange.getIn();
 
@@ -91,44 +91,45 @@ public class CMISProducer extends DefaultProducer {
         return getSessionFacade().getObjectById(objectId);
     }
 
-    public CmisObject findObjectByPath(Exchange exchange) throws Exception
-    {
+    public CmisObject findObjectByPath(Exchange exchange) throws Exception {
         validateRequiredHeader(exchange, PropertyIds.PATH);
         Message message = exchange.getIn();
 
         String path = message.getHeader(PropertyIds.PATH, String.class);
 
-        return getSessionFacade().getObjectByPath(path);
-    }
-
-    public ContentStream downloadDocument(Exchange exchange) throws Exception
-    {
-        validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
-        Message message = exchange.getIn();
-
-        String objectId = message.getHeader(CamelCMISConstants.CMIS_OBJECT_ID, String.class);
-
-        CmisObject result = getSessionFacade().getObjectById(objectId);
-
-        if(result instanceof Document)
-        {
-            return ((Document) result).getContentStream();
+        try {
+            return getSessionFacade().getObjectByPath(path);
+        } catch (Exception e) {
+            throw new CamelCmisObjectNotFoundException("Can not find object by path :" + path, e);
         }
-        else
-            throw new CamelCmisException("Unable to get contentStream for document with id: " + objectId);
     }
 
-    public Folder getFolder(Exchange exchange) throws Exception
-    {
+    public ContentStream downloadDocument(Exchange exchange) throws Exception {
+        validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
+        Message message = exchange.getIn();
+
+        String objectId = message.getHeader(CamelCMISConstants.CMIS_OBJECT_ID, String.class);
+
+        CmisObject result = getSessionFacade().getObjectById(objectId);
+
+        if (result instanceof Document) {
+            return ((Document) result).getContentStream();
+        } else {
+            throw new CamelCmisException("Unable to get contentStream for document with id: " + objectId);
+        }
+    }
+
+    public Folder getFolder(Exchange exchange) throws Exception {
         validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
         Message message = exchange.getIn();
 
         String objectId = message.getHeader(CamelCMISConstants.CMIS_OBJECT_ID, String.class);
         CmisObject result = getSessionFacade().getObjectById(objectId);
-        if(result instanceof Folder)
+        if (result instanceof Folder) {
             return (Folder) result;
-        else
+        } else {
             return null;
+        }
     }
 
     private Map<String, Object> filterTypeProperties(Map<String, Object> properties) throws Exception {
@@ -183,6 +184,33 @@ public class CMISProducer extends DefaultProducer {
         } else { // other types
             return storeDocument(parentFolder, cmisProperties, null);
         }
+    }
+
+    public Folder createFolderByPath(Exchange exchange) throws Exception {
+        validateRequiredHeader(exchange, PropertyIds.PATH);
+        validateRequiredHeader(exchange, PropertyIds.NAME);
+
+        Message message = exchange.getIn();
+        Map<String, Object> cmisProperties = filterTypeProperties(message.getHeaders());
+        String parentPath = message.getHeader(PropertyIds.PATH, String.class);
+
+        CmisObject result = getSessionFacade().getObjectByPath(parentPath);
+
+        if (result instanceof Folder) {
+            return ((Folder) result).createFolder(cmisProperties);
+        }
+
+        throw new CamelCmisException("Can not create folder on path:" + parentPath);
+    }
+
+    private String parentFolderPathFor(Message message) {
+        String path = message.getHeader(PropertyIds.PATH, String.class);
+        String name = message.getHeader(PropertyIds.NAME, String.class);
+
+        if (path != null && path.length() > name.length()) {
+            return path.substring(0, path.length() - name.length());
+        }
+        return "/";
     }
 
     /**
@@ -306,7 +334,7 @@ public class CMISProducer extends DefaultProducer {
      * Method's name are defined and retrieved from {@link CamelCMISActions}.
      */
     @SuppressWarnings("unused")
-    public Map<CmisObject, CmisObject> copyFolder(Exchange exchange) throws Exception {
+    public Map<String, CmisObject> copyFolder(Exchange exchange) throws Exception {
         validateRequiredHeader(exchange, CamelCMISConstants.CMIS_DESTIONATION_FOLDER_ID);
         validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
 
@@ -318,12 +346,11 @@ public class CMISProducer extends DefaultProducer {
         Folder destinationFolder = (Folder) getSessionFacade().getObjectById(destinationFolderId);
         Folder toCopyFolder = (Folder) getSessionFacade().getObjectById(toCopyFolderId);
 
-        Map<CmisObject, CmisObject> result = new HashMap<>();
+        Map<String, CmisObject> result = new HashMap<>();
         return copyFolderRecursive(destinationFolder, toCopyFolder, result);
     }
 
-    public ItemIterable<CmisObject> listFolder (Exchange exchange) throws Exception
-    {
+    public ItemIterable<CmisObject> listFolder(Exchange exchange) throws Exception {
         validateRequiredHeader(exchange, CamelCMISConstants.CMIS_OBJECT_ID);
 
         Message message = exchange.getIn();
@@ -334,24 +361,22 @@ public class CMISProducer extends DefaultProducer {
         return sourceFolder.getChildren();
     }
 
-    private Map<CmisObject, CmisObject> copyFolderRecursive(Folder destinationFolder, Folder toCopyFolder, Map<CmisObject,CmisObject> result) {
+    private Map<String, CmisObject> copyFolderRecursive(Folder destinationFolder, Folder toCopyFolder, Map<String, CmisObject> result) {
         Map<String, Object> folderProperties = new HashMap<>();
         folderProperties.put(PropertyIds.NAME, toCopyFolder.getName());
         folderProperties.put(PropertyIds.OBJECT_TYPE_ID, toCopyFolder.getBaseTypeId().value());
-        Map<String, String> folders = new HashMap<>();
         Folder newFolder = destinationFolder.createFolder(folderProperties);
-        folders.put(toCopyFolder.getId(), newFolder.getId());
-        result.put(toCopyFolder, newFolder);
+        result.put(toCopyFolder.getId(), newFolder);
         copyChildren(newFolder, toCopyFolder, result);
         return result;
     }
 
-    private void copyChildren(Folder destinationFolder, Folder toCopyFolder, Map<CmisObject, CmisObject> result) {
+    private void copyChildren(Folder destinationFolder, Folder toCopyFolder, Map<String, CmisObject> result) {
         ItemIterable<CmisObject> immediateChildren = toCopyFolder.getChildren();
         for (CmisObject child : immediateChildren) {
             if (child instanceof Document) {
                 Document newDocument = ((Document) child).copy(destinationFolder);
-                result.put(child, newDocument);
+                result.put(child.getId(), newDocument);
             } else if (child instanceof Folder) {
                 copyFolderRecursive(destinationFolder, (Folder) child, result);
             }
@@ -401,22 +426,19 @@ public class CMISProducer extends DefaultProducer {
 
         byte[] bytes = message.getBody(byte[].class);
         Document document = (Document) getSessionFacade().getObjectById(objectId);
-        if(fileName == null)
-        {
+        if (fileName == null) {
             fileName = document.getName();
         }
         Map<String, Object> properties = filterTypeProperties(message.getHeaders());
 
         ContentStream contentStream = getSessionFacade().createContentStream(fileName, bytes, mimeType);
 
-        try
-        {
+        try {
             return document.checkIn(true, properties, contentStream, checkInComment);
-        }
-        finally {
+        } catch (Exception e) {
             document.cancelCheckOut();
+            throw e;
         }
-
     }
 
     /**
